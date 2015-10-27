@@ -132,7 +132,7 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
     credits += credit;
     while (credits > 0) {
       T data = pending.poll();
-      if (pending == null) {
+      if (data == null) {
         break;
       } else {
         credits--;

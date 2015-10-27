@@ -41,8 +41,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   private static final Logger log = LoggerFactory.getLogger(EventBusImpl.class);
 
-  private List<Handler<SendContext>> interceptors = new CopyOnWriteArrayList<>();
-
+  private final List<Handler<SendContext>> interceptors = new CopyOnWriteArrayList<>();
   private final AtomicLong replySequence = new AtomicLong(0);
   protected final VertxInternal vertx;
   protected final EventBusMetrics metrics;
@@ -306,7 +305,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       throw new IllegalStateException("address not specified");
     } else {
       HandlerRegistration<T> replyHandlerRegistration = createReplyHandlerRegistration(replyMessage, options, replyHandler);
-      sendReply(new SendContextImpl<>(replyMessage, options, replyHandlerRegistration), replierMessage);
+      new ReplySendContextImpl<>(replyMessage, options, replyHandlerRegistration, replierMessage).next();
     }
   }
 
@@ -438,9 +437,34 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     public void next() {
       if (iter.hasNext()) {
         Handler<SendContext> handler = iter.next();
-        handler.handle(this);
+        try {
+          handler.handle(this);
+        } catch (Throwable t) {
+          log.error("Failure in interceptor", t);
+        }
       } else {
         sendOrPub(this);
+      }
+    }
+  }
+
+  protected class ReplySendContextImpl<T> extends SendContextImpl<T> {
+
+    private final MessageImpl replierMessage;
+
+    public ReplySendContextImpl(MessageImpl message, DeliveryOptions options, HandlerRegistration<T> handlerRegistration,
+                                MessageImpl replierMessage) {
+      super(message, options, handlerRegistration);
+      this.replierMessage = replierMessage;
+    }
+
+    @Override
+    public void next() {
+      if (iter.hasNext()) {
+        Handler<SendContext> handler = iter.next();
+        handler.handle(this);
+      } else {
+        sendReply(this, replierMessage);
       }
     }
   }
