@@ -98,27 +98,27 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   @Override
   public <T> MessageProducer<T> sender(String address) {
     Objects.requireNonNull(address, "address");
-    return new MessageProducerImpl<>(this, address, true, new DeliveryOptions());
+    return new MessageProducerImpl<>(vertx, address, true, new DeliveryOptions());
   }
 
   @Override
   public <T> MessageProducer<T> sender(String address, DeliveryOptions options) {
     Objects.requireNonNull(address, "address");
     Objects.requireNonNull(options, "options");
-    return new MessageProducerImpl<>(this, address, true, options);
+    return new MessageProducerImpl<>(vertx, address, true, options);
   }
 
   @Override
   public <T> MessageProducer<T> publisher(String address) {
     Objects.requireNonNull(address, "address");
-    return new MessageProducerImpl<>(this, address, false, new DeliveryOptions());
+    return new MessageProducerImpl<>(vertx, address, false, new DeliveryOptions());
   }
 
   @Override
   public <T> MessageProducer<T> publisher(String address, DeliveryOptions options) {
     Objects.requireNonNull(address, "address");
     Objects.requireNonNull(options, "options");
-    return new MessageProducerImpl<>(this, address, false, options);
+    return new MessageProducerImpl<>(vertx, address, false, options);
   }
 
   @Override
